@@ -1,0 +1,96 @@
+---
+- hosts: all
+  tasks:
+  - name: '[sqldb360] fetch release'
+    get_url:
+      url: https://github.com/sqldb360/sqldb360/archive/v19.3.zip
+      dest: /tmp/v19.3.zip
+    delegate_to: localhost
+    run_once: true
+    tags:
+    - sqldb360
+    - awr
+    - ee
+  - name: '[sqldb360] copy & unzip on targets'
+    unarchive:
+      src: /tmp/v19.3.zip
+      copy: true
+      dest: /home/oracle
+    become: true
+    become_user: oracle
+    tags:
+    - sqldb360
+    - awr
+    - ee
+
+  - name: '[amon] fetch amon'
+    get_url:
+      url: http://sites.google.com/site/freetoolamon/download/amon64_ol5_11r2.gz
+      dest: /tmp/amon.gz
+    delegate_to: localhost
+    run_once: true
+    tags:
+    - amon
+    - se
+    - ee
+  - name: '[amon] copy to targets'
+    copy:
+      src: /tmp/amon.gz
+      dest: /home/oracle/
+    become: true
+    become_user: oracle
+    tags:
+    - amon
+    - se
+    - ee
+  - name: '[amon] gunzip'
+    command: gunzip -f /home/oracle/amon.gz
+    become: true
+    become_user: oracle
+    tags:
+    - amon
+    - se
+    - ee
+  - name: '[amon] make executable'
+    file:
+      path: /home/oracle/amon
+      mode: 0755
+    become: true
+    become_user: oracle
+    tags:
+    - amon
+    - se
+    - ee
+
+  - name: '[zauberkasten] git clone'
+    git: 
+      repo: https://github.com/Rendanic/SQL-Zauberkasten.git
+      dest: /tmp/zauberkasten
+      clone: yes
+      update: yes
+    delegate_to: localhost
+    run_once: true
+    tags:
+    - zauberkasten
+    - ee
+    - se
+  - name: '[zauberkasten] copy to dest'
+    synchronize:
+      src: /tmp/zauberkasten/sql/
+      dest: /home/oracle/Zauberkasten/
+    become: true
+    tags:
+    - zauberkasten
+    - ee
+    - se
+  - name: 'zauberkasten, fix owner'
+    file:
+      dest: /home/oracle/Zauberkasten/
+      owner: oracle
+      group: oinstall
+      recurse: true
+    become: true
+    tags:
+    - zauberkasten
+    - ee
+    - se
